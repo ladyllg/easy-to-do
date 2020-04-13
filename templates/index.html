@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+        <div id="body-content" class="rounded-bottom col-sm-12 col-lg-8 mx-auto p-4" style="background-color: #fff;">
+                <h6 class="text-center" style="font-size: 15px; font-family: Bitter;">“Life is too complicated not to be orderly.” ~ Martha Stewart</h6>    
+                <hr class="my-4">
+                <form method="post" id="form_todolist">
+                    {% csrf_token %}
+                    {% for todo in todos %}
+                    <div class="icheck-primary">
+                        <input type="checkbox" class="taskCheckbox" name="checkedbox" id="{{ todo.id }}" value="{{ todo.id }}">
+                        <label for="{{ todo.id }}"><span class="complete-">{{ todo.content }}</span></label>
+                        <span class="badge badge-secondary">{{ todo.category.name }}</span>
+                        <div class="row">
+                            <div class="ml-5">
+                            <i class="far fa-calendar-alt"></i><small>&nbsp;{{ todo.due_date }}</small>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                    </div>
+                    {% endfor %}                
+                <div class="text-center">
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addTaskModal">Add Task</button>
+                    <button type="submit" class="btn btn-danger" name="deleteTasks">Delete Tasks</button>
+                </form>
+                    <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#configModal"><i class="fa fa-cog"></i></button>        
+                </div>
+        </div>
+    </div>
+
+<!-- Modal -->
+<div class="modal fade" id="configModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Settings</h5>
+        <button type="button" class="close" data-dismiss="modal"  onclick="close_input()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="post" enctype='multipart/form-data' id="form_settings" >
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-4 col-md-3 col-lg-3"><label>Background:</label></div>
+                <div class="col-8 col-md-9 col-lg-9">
+                    <input type="file" name="img" accept="image/*" id="id_img" hidden="True" onchange="PreviewImage();">
+                    <img onclick="document.getElementById('id_img').click(); return false;" id="uploadPreview" style="width: 100px; height: 100px;" />
+                    <small class="text-muted form-text">Choose a file.</small>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-4 col-md-3 col-lg-3"><label>Categories:</label></div>
+                <div class="col-8">
+                        {% for cat in categories %}
+                        <span class="badge badge-light" id="badge-{{ cat.id }}">{{ cat.name }}
+                            <a href="" id="{{ cat.id }}" style="color: red;"><i class="fa fa-times fa-lg" aria-hidden="true"></i></a></span>
+                        {% endfor %}
+                        <br>
+                        <a href="" onclick="return new_category()" id="plus"><i class="fas fa-plus-circle"></i></a>
+                        {{ form_config.newcategory }}
+                </div>
+                {{ form_config.deletes }}
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"  onclick="close_input()">Close</button>
+        <button type="submit" class="btn btn-success" name="changeSettings">Save changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Add New Task</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="post" enctype='multipart/form-data' id="form_new_task" >
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-12">
+                    Description:
+                </div>
+                <div class="col-12">
+                    {{ form_newtask.title }}
+                </div>
+                <div class="col-12">
+                    Category:
+                </div>
+                <div class="col-12">
+                    {{ form_newtask.category }}
+                </div>
+                <div class="col-12">
+                    Due Date: {{ form_newtask.due_date }}
+                </div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-success" name="newTask">Save changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+    $( function() {
+        $( "#id_due_date" ).datepicker({
+            format: 'yyyy-mm-dd',
+        });
+    });
+
+    function new_category(){
+        $('#plus').hide();
+        $('#id_newcategory').show();
+        return false;
+    }
+    function close_input(){
+        console.log('close');
+        $('#id_newcategory').hide()
+        $('#plus').show();
+    }
+
+    $(document).ready(function(){
+        $('#id_newcategory').hide();
+        $('#id_deletes').hide();
+
+        background_path = '{{ back|safe }}';
+
+        $('body').css('background-image', 'url(' + background_path + ')');
+
+        var bg_img = $("body").css("background-image");
+        bg = bg_img.replace('url(','').replace(')','').replace(/\"/gi, "");
+        var box_img = $("#uploadPreview");
+        $(box_img).attr("src", bg);
+
+        $('.js-example-basic-multiple').select2();
+    });
+
+    function PreviewImage() {
+        var oFReader = new FileReader();
+        oFReader.readAsDataURL(document.getElementById("id_img").files[0]);
+
+        oFReader.onload = function (oFREvent) {
+            document.getElementById("uploadPreview").src = oFREvent.target.result;
+        };
+    };
+
+</script>   
+
+{% for cat in categories%}
+<script type="text/javascript">    
+    $('#badge-{{ cat.id }}').click(function(){
+        $(this).hide();
+        var old_value = $("#id_deletes").val();
+        console.log('-->', $("#id_deletes"));
+        var id = '{{ cat.id }},'
+        console.log(id);
+        new_value = old_value.concat(id);
+        $("#id_deletes").val(new_value);
+        console.log('{{ cat.id }}');
+        console.log($("#id_deletes").val());
+        return false;
+    });
+</script>
+{% endfor %}
+{% endblock %}
